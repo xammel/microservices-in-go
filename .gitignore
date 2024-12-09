@@ -1,2 +1,3 @@
-broker-service/brokerApp
-front-end/frontApp
+**/brokerApp
+**/frontApp
+**/authApp

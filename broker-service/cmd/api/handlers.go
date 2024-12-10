@@ -1,8 +1,21 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"net/http"
 )
+
+type RequestPayload struct {
+	Action string `json:"action"`
+	Auth AuthPayload `json:"auth,omitempty"`
+}
+
+type AuthPayload struct {
+	Email string `json:"email"`
+	Password string `json:"password"`
+}
 
 func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
 
@@ -12,4 +25,72 @@ func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = app.writeJson(w, http.StatusOK, payload)
+}
+
+func (app *Config) HandleSubmission(writer http.ResponseWriter, request *http.Request) {
+	var requestPayload RequestPayload
+
+	error := app.readJson(writer, request, &requestPayload)
+	if error != nil {
+		app.errorJson(writer, error)
+		return
+	}
+
+	switch requestPayload.Action {
+	case "auth":
+		app.authenticate(writer, requestPayload.Auth)
+	default:
+		app.errorJson(writer, errors.New("unknown action"))
+	}
+}
+
+func (app *Config) authenticate(writer http.ResponseWriter, authPayload AuthPayload) {
+	// create some json we'll sent to the auth microservice
+	jsonData, _ := json.MarshalIndent(authPayload, "", "\t")
+
+	// call the service
+	request, error := http.NewRequest("POST", "http://authentication-service/authenticate", bytes.NewBuffer(jsonData))
+	if error != nil {
+		app.errorJson(writer, error)
+		return
+	}
+
+	client := &http.Client{}
+	response, error := client.Do(request)
+	if error != nil {
+		app.errorJson(writer, error)
+		return
+	}
+	defer response.Body.Close()
+
+	// make sure we get back the correct status code
+	if response.StatusCode == http.StatusUnauthorized {
+		app.errorJson(writer, errors.New("invalid credentials"))
+		return
+	} else if response.StatusCode != http.StatusAccepted {
+		app.errorJson(writer, errors.New("error calling authentication service"))
+		return
+	}
+
+	// create var we'll read response.Body into
+	var jsonFromService jsonResponse
+	
+	// decode json from auth 
+	error = json.NewDecoder(response.Body).Decode(&jsonFromService)
+	if error != nil {
+		app.errorJson(writer, error)
+		return
+	}
+
+	if jsonFromService.Error {
+		app.errorJson(writer, error, http.StatusUnauthorized)
+		return
+	}
+
+	var payload jsonResponse
+	payload.Error = false
+	payload.Message = "Authenticated!"
+	payload.Data = jsonFromService.Data
+
+	app.writeJson(writer, http.StatusAccepted, payload)
 }

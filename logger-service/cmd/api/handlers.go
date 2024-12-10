@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"log-service/data"
 	"net/http"
 )
@@ -27,6 +28,8 @@ func (app *Config) WriteLog(writer http.ResponseWriter, request *http.Request) {
 		app.errorJson(writer, err)
 		return
 	}
+
+	log.Printf("Inserted %+v into Mongo DB \n", event)
 
 	response := jsonResponse {
 		Error: false,

@@ -22,13 +22,13 @@ func (app *Config) Authenticate(writer http.ResponseWriter, request *http.Reques
 	// validate the user against the DB
 	user, error := app.Models.User.GetByEmail(requestPayload.Email)
 	if error != nil {
-		app.errorJson(writer, errors.New("invalid credentials"), http.StatusBadRequest)
+		app.errorJson(writer, errors.New(error.Error()), http.StatusBadRequest)
 		return
 	}
 
 	valid, error := user.PasswordMatches(requestPayload.Password)
 	if error != nil || !valid {
-		app.errorJson(writer, errors.New("invalid credentials"), http.StatusBadRequest)
+		app.errorJson(writer, errors.New("invalid password"), http.StatusUnauthorized)
 		return
 	}
 

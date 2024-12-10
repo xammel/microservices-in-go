@@ -8,12 +8,12 @@ import (
 )
 
 type RequestPayload struct {
-	Action string `json:"action"`
-	Auth AuthPayload `json:"auth,omitempty"`
+	Action string      `json:"action"`
+	Auth   AuthPayload `json:"auth,omitempty"`
 }
 
 type AuthPayload struct {
-	Email string `json:"email"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
@@ -67,15 +67,15 @@ func (app *Config) authenticate(writer http.ResponseWriter, authPayload AuthPayl
 	if response.StatusCode == http.StatusUnauthorized {
 		app.errorJson(writer, errors.New("invalid credentials"))
 		return
-	} else if response.StatusCode != http.StatusAccepted {
-		app.errorJson(writer, errors.New("error calling authentication service"))
+	} else if response.StatusCode == http.StatusBadRequest {
+		app.errorJson(writer, errors.New("bad request made to postgres"))
 		return
 	}
 
 	// create var we'll read response.Body into
 	var jsonFromService jsonResponse
-	
-	// decode json from auth 
+
+	// decode json from auth
 	error = json.NewDecoder(response.Body).Decode(&jsonFromService)
 	if error != nil {
 		app.errorJson(writer, error)

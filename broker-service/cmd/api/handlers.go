@@ -7,10 +7,17 @@ import (
 	"net/http"
 )
 
+const (
+	mailServiceURL = "http://mail-service/send"
+	logServiceURL  = "http://logger-service/log"
+	authServiceURL = "http://authentication-service/authenticate"
+)
+
 type RequestPayload struct {
 	Action string      `json:"action"`
 	Auth   AuthPayload `json:"auth,omitempty"`
 	Log    LogPayload  `json:"log,omitempty"`
+	Mail   MailPayload `json:"mail,omitempty"`
 }
 
 type AuthPayload struct {
@@ -21,6 +28,13 @@ type AuthPayload struct {
 type LogPayload struct {
 	Name string `json:"name"`
 	Data string `json:"data"`
+}
+
+type MailPayload struct {
+	From    string `json:"from"`
+	To      string `json:"to"`
+	Subject string `json:"subject"`
+	Message string `json:"message"`
 }
 
 func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
@@ -47,6 +61,8 @@ func (app *Config) HandleSubmission(writer http.ResponseWriter, request *http.Re
 		app.authenticate(writer, requestPayload.Auth)
 	case "log":
 		app.logItem(writer, requestPayload.Log)
+	case "mail":
+		app.sendMail(writer, requestPayload.Mail)
 	default:
 		app.errorJson(writer, errors.New("unknown action"))
 	}
@@ -57,7 +73,7 @@ func (app *Config) authenticate(writer http.ResponseWriter, authPayload AuthPayl
 	jsonData, _ := json.MarshalIndent(authPayload, "", "\t")
 
 	// call the service
-	request, error := http.NewRequest("POST", "http://authentication-service/authenticate", bytes.NewBuffer(jsonData))
+	request, error := http.NewRequest("POST", authServiceURL, bytes.NewBuffer(jsonData))
 	if error != nil {
 		app.errorJson(writer, error)
 		return
@@ -108,7 +124,7 @@ func (app *Config) logItem(writer http.ResponseWriter, logEntry LogPayload) {
 	jsonData, _ := json.MarshalIndent(logEntry, "", "\t")
 
 	// call the service
-	request, error := http.NewRequest("POST", "http://logger-service/log", bytes.NewBuffer(jsonData))
+	request, error := http.NewRequest("POST", logServiceURL, bytes.NewBuffer(jsonData))
 	if error != nil {
 		app.errorJson(writer, error)
 		return
@@ -134,6 +150,41 @@ func (app *Config) logItem(writer http.ResponseWriter, logEntry LogPayload) {
 	var payload jsonResponse
 	payload.Error = false
 	payload.Message = "logged"
+
+	app.writeJson(writer, http.StatusAccepted, payload)
+}
+
+func (app *Config) sendMail(writer http.ResponseWriter, message MailPayload) {
+	jsonData, _ := json.MarshalIndent(message, "", "\t")
+
+	// call the mail service
+	request, err := http.NewRequest("POST", mailServiceURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		app.errorJson(writer, err)
+		return
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		app.errorJson(writer, err)
+		return
+	}
+
+	defer response.Body.Close()
+
+	// make sure we get the right status code back
+	if response.StatusCode != http.StatusAccepted {
+		app.errorJson(writer, errors.New("error calling mail service"))
+		return
+	}
+
+	// send back json
+	var payload jsonResponse
+	payload.Error = false
+	payload.Message = "Message was sent to: " + message.To
 
 	app.writeJson(writer, http.StatusAccepted, payload)
 }

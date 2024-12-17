@@ -2,3 +2,5 @@
 **/frontApp
 **/authApp
 **/loggerApp
+**/rabbitMQApp
+**/mailerApp

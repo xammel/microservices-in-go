@@ -1,4 +1,4 @@
-package jsonhelpers
+package rest
 
 import (
 	"encoding/json"

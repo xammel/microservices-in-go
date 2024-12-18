@@ -2,7 +2,7 @@ package event
 
 import (
 	"log"
-	"common/event"
+	"common/rabbitmq"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -17,7 +17,7 @@ func (e *Emitter) setup() error {
 		return err
 	}
 	defer channel.Close()
-	return event.DeclareExchange(channel)
+	return rabbitmq.DeclareExchange(channel)
 }
 
 func (e *Emitter) Push(event string, severity string) error {

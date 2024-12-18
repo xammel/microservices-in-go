@@ -6,52 +6,22 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"common/event"
-
-	amqp "github.com/rabbitmq/amqp091-go"
+	"common/rabbitmq"
 )
-
-type Consumer struct {
-	connection *amqp.Connection
-	queueName  string
-}
 
 type Payload struct {
 	Name string `json:"name"`
 	Data string `json:"data"`
 }
 
-func NewConsumer(connection *amqp.Connection) (Consumer, error) {
-	consumer := Consumer{
-		connection: connection,
-	}
-
-	err := consumer.setup()
-	if err != nil {
-		return Consumer{}, err
-	}
-
-	return consumer, nil
-}
-
-func (consumer *Consumer) setup() error {
-	channel, err := consumer.connection.Channel()
+func Listen(rabbitConn *rabbitmq.RabbitConnection, topics []string) error {
+	channel, err := rabbitConn.Connection.Channel()
 	if err != nil {
 		return err
 	}
 	defer channel.Close()
 
-	return event.DeclareExchange(channel)
-}
-
-func (consumer *Consumer) Listen(topics []string) error {
-	channel, err := consumer.connection.Channel()
-	if err != nil {
-		return err
-	}
-	defer channel.Close()
-
-	queue, err := event.DeclareRandomQueue(channel)
+	queue, err := rabbitmq.DeclareRandomQueue(channel)
 	if err != nil {
 		return err
 	}

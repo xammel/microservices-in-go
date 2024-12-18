@@ -1,6 +1,7 @@
 package main
 
 import (
+	"broker/event"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -60,7 +61,9 @@ func (app *Config) HandleSubmission(writer http.ResponseWriter, request *http.Re
 	case "auth":
 		app.authenticate(writer, requestPayload.Auth)
 	case "log":
-		app.logItem(writer, requestPayload.Log)
+		// Legacy
+		//app.logItem(writer, requestPayload.Log)
+		app.logEventViaRabbitMQ(writer, requestPayload.Log)
 	case "mail":
 		app.sendMail(writer, requestPayload.Mail)
 	default:
@@ -119,6 +122,9 @@ func (app *Config) authenticate(writer http.ResponseWriter, authPayload AuthPayl
 	app.writeJson(writer, http.StatusAccepted, payload)
 }
 
+/**
+*** Legacy ***
+**/
 func (app *Config) logItem(writer http.ResponseWriter, logEntry LogPayload) {
 	// create some json we'll sent to the auth microservice
 	jsonData, _ := json.MarshalIndent(logEntry, "", "\t")
@@ -187,4 +193,37 @@ func (app *Config) sendMail(writer http.ResponseWriter, message MailPayload) {
 	payload.Message = "Message was sent to: " + message.To
 
 	app.writeJson(writer, http.StatusAccepted, payload)
+}
+
+func (app *Config) logEventViaRabbitMQ(writer http.ResponseWriter, logPayload LogPayload) {
+	
+	// Push event to RabbitMQ
+	err := app.pushToQueue(logPayload)
+	if err != nil {
+		app.errorJson(writer, err)
+		return
+	}
+
+	// Send success JSON back to caller
+	var payload jsonResponse
+	payload.Error = false
+	payload.Message = "logged via RabbitMQ"
+
+	app.writeJson(writer, http.StatusAccepted, payload)
+}
+
+func (app *Config) pushToQueue(payload LogPayload) error {
+	emitter, err := event.NewEventEmitter(app.RabbitMQ)
+	if err != nil {
+		return err
+	}
+
+	jsonData, _ := json.MarshalIndent(&payload, "", "\t")
+	err = emitter.Push(string(jsonData), "log.INFO")
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -20,16 +20,14 @@ func main() {
 	}
 	defer rabbitConnection.Close()
 
-	// start listening for messages
-	log.Println("Listening for and consuming RabbitMQ messages...")
-
 	// create consumer
 	consumer, err := event.NewConsumer(rabbitConnection)
 	if err != nil {
 		panic(err)
 	}
 
-	// watch the Q and consume events
+	// start listening for messages (watch the Q and consume events)
+	log.Println("Listening for and consuming RabbitMQ messages...")
 	err = consumer.Listen([]string{"log.INFO", "log.WARNING", "log.ERROR"})
 	if err != nil {
 		log.Println(err)

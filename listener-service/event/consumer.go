@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"common/event"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -38,8 +39,9 @@ func (consumer *Consumer) setup() error {
 	if err != nil {
 		return err
 	}
+	defer channel.Close()
 
-	return declareExchange(channel)
+	return event.DeclareExchange(channel)
 }
 
 func (consumer *Consumer) Listen(topics []string) error {
@@ -49,13 +51,14 @@ func (consumer *Consumer) Listen(topics []string) error {
 	}
 	defer channel.Close()
 
-	queue, err := declareRandomQueue(channel)
+	queue, err := event.DeclareRandomQueue(channel)
 	if err != nil {
 		return err
 	}
 
 	for _, s := range topics {
-		channel.QueueBind(
+		log.Printf("Binding channel to queue with params: name: %s, key: %s, exchange: %s", queue.Name, s, "logs_topic")
+		err = channel.QueueBind(
 			queue.Name,
 			s,
 			"logs_topic",
@@ -88,6 +91,7 @@ func (consumer *Consumer) Listen(topics []string) error {
 }
 
 func handlePayload(payload Payload) {
+	log.Printf("Received payload: %+v \n", payload)
 	switch payload.Name {
 	case "log", "event":
 		// log it all

@@ -1,4 +1,4 @@
-package main
+package jsonhelpers
 
 import (
 	"encoding/json"
@@ -7,13 +7,13 @@ import (
 	"net/http"
 )
 
-type jsonResponse struct {
+type JsonResponse struct {
 	Error   bool   `json:"error"`
 	Message string `json:"message"`
 	Data    any    `json:"data,omitempty"`
 }
 
-func (app *Config) readJson(writer http.ResponseWriter, request *http.Request, data any) error {
+func ReadJson(writer http.ResponseWriter, request *http.Request, data any) error {
 	maxBytes := 1048576 // 1 MB
 	request.Body = http.MaxBytesReader(writer, request.Body, int64(maxBytes))
 	
@@ -31,7 +31,7 @@ func (app *Config) readJson(writer http.ResponseWriter, request *http.Request, d
 	return nil
  }
 
- func (app *Config) writeJson(writer http.ResponseWriter, status int, data any, headers ...http.Header) error {
+ func WriteJson(writer http.ResponseWriter, status int, data any, headers ...http.Header) error {
 	output, err := json.Marshal(data)
 	if err != nil {
 		return err
@@ -54,7 +54,7 @@ func (app *Config) readJson(writer http.ResponseWriter, request *http.Request, d
 	return nil
  }
 
- func (app *Config) errorJson(writer http.ResponseWriter, err error, status ...int) error {
+ func ErrorJson(writer http.ResponseWriter, err error, status ...int) error {
 	
 	statusCode := http.StatusBadRequest
 
@@ -62,9 +62,9 @@ func (app *Config) readJson(writer http.ResponseWriter, request *http.Request, d
 		statusCode = status[0]
 	}
 
-	var payload jsonResponse
+	var payload JsonResponse
 	payload.Error = true
 	payload.Message = err.Error()
 
-	return app.writeJson(writer, statusCode, payload)
+	return WriteJson(writer, statusCode, payload)
  }

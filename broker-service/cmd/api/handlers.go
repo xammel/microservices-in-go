@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"common/jsonhelpers"
 )
 
 const (
@@ -40,20 +41,20 @@ type MailPayload struct {
 
 func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
 
-	payload := jsonResponse{
+	payload := jsonhelpers.JsonResponse {
 		Error:   false,
 		Message: "Hit the broker",
 	}
 
-	_ = app.writeJson(w, http.StatusOK, payload)
+	_ = jsonhelpers.WriteJson(w, http.StatusOK, payload)
 }
 
 func (app *Config) HandleSubmission(writer http.ResponseWriter, request *http.Request) {
 	var requestPayload RequestPayload
 
-	error := app.readJson(writer, request, &requestPayload)
+	error := jsonhelpers.ReadJson(writer, request, &requestPayload)
 	if error != nil {
-		app.errorJson(writer, error)
+		jsonhelpers.ErrorJson(writer, error)
 		return
 	}
 
@@ -67,7 +68,7 @@ func (app *Config) HandleSubmission(writer http.ResponseWriter, request *http.Re
 	case "mail":
 		app.sendMail(writer, requestPayload.Mail)
 	default:
-		app.errorJson(writer, errors.New("unknown action"))
+		jsonhelpers.ErrorJson(writer, errors.New("unknown action"))
 	}
 }
 
@@ -78,48 +79,48 @@ func (app *Config) authenticate(writer http.ResponseWriter, authPayload AuthPayl
 	// call the service
 	request, error := http.NewRequest("POST", authServiceURL, bytes.NewBuffer(jsonData))
 	if error != nil {
-		app.errorJson(writer, error)
+		jsonhelpers.ErrorJson(writer, error)
 		return
 	}
 
 	client := &http.Client{}
 	response, error := client.Do(request)
 	if error != nil {
-		app.errorJson(writer, error)
+		jsonhelpers.ErrorJson(writer, error)
 		return
 	}
 	defer response.Body.Close()
 
 	// make sure we get back the correct status code
 	if response.StatusCode == http.StatusUnauthorized {
-		app.errorJson(writer, errors.New("invalid credentials"))
+		jsonhelpers.ErrorJson(writer, errors.New("invalid credentials"))
 		return
 	} else if response.StatusCode == http.StatusBadRequest {
-		app.errorJson(writer, errors.New("bad request made to postgres"))
+		jsonhelpers.ErrorJson(writer, errors.New("bad request made to postgres"))
 		return
 	}
 
 	// create var we'll read response.Body into
-	var jsonFromService jsonResponse
+	var jsonFromService jsonhelpers.JsonResponse
 
 	// decode json from auth
 	error = json.NewDecoder(response.Body).Decode(&jsonFromService)
 	if error != nil {
-		app.errorJson(writer, error)
+		jsonhelpers.ErrorJson(writer, error)
 		return
 	}
 
 	if jsonFromService.Error {
-		app.errorJson(writer, error, http.StatusUnauthorized)
+		jsonhelpers.ErrorJson(writer, error, http.StatusUnauthorized)
 		return
 	}
 
-	var payload jsonResponse
+	var payload jsonhelpers.JsonResponse
 	payload.Error = false
 	payload.Message = "Authenticated!"
 	payload.Data = jsonFromService.Data
 
-	app.writeJson(writer, http.StatusAccepted, payload)
+	jsonhelpers.WriteJson(writer, http.StatusAccepted, payload)
 }
 
 /**
@@ -132,7 +133,7 @@ func (app *Config) logItem(writer http.ResponseWriter, logEntry LogPayload) {
 	// call the service
 	request, error := http.NewRequest("POST", logServiceURL, bytes.NewBuffer(jsonData))
 	if error != nil {
-		app.errorJson(writer, error)
+		jsonhelpers.ErrorJson(writer, error)
 		return
 	}
 
@@ -142,22 +143,22 @@ func (app *Config) logItem(writer http.ResponseWriter, logEntry LogPayload) {
 	client := &http.Client{}
 	response, error := client.Do(request)
 	if error != nil {
-		app.errorJson(writer, error)
+		jsonhelpers.ErrorJson(writer, error)
 		return
 	}
 	defer response.Body.Close()
 
 	// make sure we get back the correct status code
 	if response.StatusCode != http.StatusAccepted {
-		app.errorJson(writer, error)
+		jsonhelpers.ErrorJson(writer, error)
 		return
 	}
 
-	var payload jsonResponse
+	var payload jsonhelpers.JsonResponse
 	payload.Error = false
 	payload.Message = "logged"
 
-	app.writeJson(writer, http.StatusAccepted, payload)
+	jsonhelpers.WriteJson(writer, http.StatusAccepted, payload)
 }
 
 func (app *Config) sendMail(writer http.ResponseWriter, message MailPayload) {
@@ -166,7 +167,7 @@ func (app *Config) sendMail(writer http.ResponseWriter, message MailPayload) {
 	// call the mail service
 	request, err := http.NewRequest("POST", mailServiceURL, bytes.NewBuffer(jsonData))
 	if err != nil {
-		app.errorJson(writer, err)
+		jsonhelpers.ErrorJson(writer, err)
 		return
 	}
 
@@ -175,7 +176,7 @@ func (app *Config) sendMail(writer http.ResponseWriter, message MailPayload) {
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		app.errorJson(writer, err)
+		jsonhelpers.ErrorJson(writer, err)
 		return
 	}
 
@@ -183,16 +184,16 @@ func (app *Config) sendMail(writer http.ResponseWriter, message MailPayload) {
 
 	// make sure we get the right status code back
 	if response.StatusCode != http.StatusAccepted {
-		app.errorJson(writer, errors.New("error calling mail service"))
+		jsonhelpers.ErrorJson(writer, errors.New("error calling mail service"))
 		return
 	}
 
 	// send back json
-	var payload jsonResponse
+	var payload jsonhelpers.JsonResponse
 	payload.Error = false
 	payload.Message = "Message was sent to: " + message.To
 
-	app.writeJson(writer, http.StatusAccepted, payload)
+	jsonhelpers.WriteJson(writer, http.StatusAccepted, payload)
 }
 
 func (app *Config) logEventViaRabbitMQ(writer http.ResponseWriter, logPayload LogPayload) {
@@ -200,16 +201,16 @@ func (app *Config) logEventViaRabbitMQ(writer http.ResponseWriter, logPayload Lo
 	// Push event to RabbitMQ
 	err := app.pushToQueue(logPayload)
 	if err != nil {
-		app.errorJson(writer, err)
+		jsonhelpers.ErrorJson(writer, err)
 		return
 	}
 
 	// Send success JSON back to caller
-	var payload jsonResponse
+	var payload jsonhelpers.JsonResponse
 	payload.Error = false
 	payload.Message = "logged via RabbitMQ"
 
-	app.writeJson(writer, http.StatusAccepted, payload)
+	jsonhelpers.WriteJson(writer, http.StatusAccepted, payload)
 }
 
 func (app *Config) pushToQueue(payload LogPayload) error {

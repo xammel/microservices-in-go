@@ -3,6 +3,7 @@ module mail-service
 go 1.23.4
 
 require (
+    common v0.0.0
 	github.com/PuerkitoBio/goquery v1.9.2 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/go-chi/chi/v5 v5.1.0 // indirect
@@ -14,3 +15,5 @@ require (
 	github.com/xhit/go-simple-mail/v2 v2.16.0 // indirect
 	golang.org/x/net v0.29.0 // indirect
 )
+
+replace common => ../common

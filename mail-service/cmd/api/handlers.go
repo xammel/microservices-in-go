@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"common/jsonhelpers"
 )
 
 func (app *Config) SendMail(writer http.ResponseWriter, request *http.Request) {
@@ -15,10 +16,10 @@ func (app *Config) SendMail(writer http.ResponseWriter, request *http.Request) {
 
 	var requestPayload mailMessage
 
-	err := app.readJson(writer, request, &requestPayload)
+	err := jsonhelpers.ReadJson(writer, request, &requestPayload)
 	if err != nil {
 		log.Println(err)
-		app.errorJson(writer, err)
+		jsonhelpers.ErrorJson(writer, err)
 		return 
 	}
 
@@ -32,14 +33,14 @@ func (app *Config) SendMail(writer http.ResponseWriter, request *http.Request) {
 	err = app.Mailer.sendSMTPMessage(msg)
 	if err != nil {
 		log.Println(err)
-		app.errorJson(writer, err)
+		jsonhelpers.ErrorJson(writer, err)
 		return
 	}
 
-	payload := jsonResponse {
+	payload := jsonhelpers.JsonResponse {
 		Error: false, 
 		Message: "sent to" + requestPayload.To,
 	}
 
-	app.writeJson(writer, http.StatusAccepted, payload)
+	jsonhelpers.WriteJson(writer, http.StatusAccepted, payload)
 }

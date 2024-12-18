@@ -1,6 +1,7 @@
 package main
 
 import (
+	"common/jsonhelpers"
 	"log"
 	"log-service/data"
 	"net/http"
@@ -8,14 +9,14 @@ import (
 
 type JsonPayload struct {
 	Name string `json:"name"`
-	Data string `"data"`
+	Data string `json:"data"`
 }
 
 func (app *Config) WriteLog(writer http.ResponseWriter, request *http.Request) {
 	// read json into var
 	var requestPayload JsonPayload
 
-	_ = app.readJson(writer, request, &requestPayload)
+	_ = jsonhelpers.ReadJson(writer, request, &requestPayload)
 
 	// insert data
 	event := data.LogEntry{
@@ -25,16 +26,16 @@ func (app *Config) WriteLog(writer http.ResponseWriter, request *http.Request) {
 
 	err := app.Models.LogEntry.Insert(event)
 	if err != nil {
-		app.errorJson(writer, err)
+		jsonhelpers.ErrorJson(writer, err)
 		return
 	}
 
 	log.Printf("Inserted %+v into Mongo DB \n", event)
 
-	response := jsonResponse {
+	response := jsonhelpers.JsonResponse {
 		Error: false,
 		Message: "logged",
 	}
 
-	app.writeJson(writer, http.StatusAccepted, response)
+	jsonhelpers.WriteJson(writer, http.StatusAccepted, response)
 }

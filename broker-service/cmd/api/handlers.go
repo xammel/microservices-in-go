@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"common/rest"
+	"common/rabbitmq"
 )
 
 const (
@@ -214,13 +215,13 @@ func (app *Config) logEventViaRabbitMQ(writer http.ResponseWriter, logPayload Lo
 }
 
 func (app *Config) pushToQueue(payload LogPayload) error {
-	emitter, err := event.NewEventEmitter(app.RabbitMQ)
+	rabbitConn, err := rabbitmq.NewConnection(app.RabbitMQ)
 	if err != nil {
 		return err
 	}
 
 	jsonData, _ := json.MarshalIndent(&payload, "", "\t")
-	err = emitter.Push(string(jsonData), "log.INFO")
+	err = event.Push(&rabbitConn, string(jsonData), "log.INFO")
 
 	if err != nil {
 		return err

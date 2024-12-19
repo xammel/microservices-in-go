@@ -9,11 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-)
-
-const (
-	dbName         = "logs"
-	collectionName = "logs"
+	"common/constants"
 )
 
 var client *mongo.Client
@@ -39,7 +35,7 @@ type LogEntry struct {
 }
 
 func (l *LogEntry) Insert(entry LogEntry) error {
-	collection := client.Database(dbName).Collection(collectionName)
+	collection := client.Database(constants.MongoDBName).Collection(constants.MongoDBCollectionName)
 
 	// why not just pass entry as second arg..?
 	_, error := collection.InsertOne(context.TODO(), LogEntry{
@@ -60,7 +56,7 @@ func (l *LogEntry) Insert(entry LogEntry) error {
 func (l *LogEntry) All() ([]*LogEntry, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	collection := client.Database(dbName).Collection(collectionName)
+	collection := client.Database(constants.MongoDBName).Collection(constants.MongoDBCollectionName)
 
 	opts := options.Find()
 	opts.SetSort(bson.D{{"created_at", -1}})
@@ -93,7 +89,7 @@ func (l *LogEntry) All() ([]*LogEntry, error) {
 func (l *LogEntry) GetOne(id string) (*LogEntry, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	collection := client.Database(dbName).Collection(collectionName)
+	collection := client.Database(constants.MongoDBName).Collection(constants.MongoDBCollectionName)
 
 	docID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -112,7 +108,7 @@ func (l *LogEntry) GetOne(id string) (*LogEntry, error) {
 func (l *LogEntry) DropCollection() error {
 	context, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	collection := client.Database(dbName).Collection(collectionName)
+	collection := client.Database(constants.MongoDBName).Collection(constants.MongoDBCollectionName)
 
 	if err := collection.Drop(context); err != nil {
 		return err
@@ -124,7 +120,7 @@ func (l *LogEntry) DropCollection() error {
 func (l *LogEntry) Update() (*mongo.UpdateResult, error) {
 	context, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	collection := client.Database(dbName).Collection(collectionName)
+	collection := client.Database(constants.MongoDBName).Collection(constants.MongoDBCollectionName)
 
 	docId, err := primitive.ObjectIDFromHex(l.ID)
 	if err != nil {

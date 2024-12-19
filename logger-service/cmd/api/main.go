@@ -1,11 +1,13 @@
 package main
 
 import (
+	commonrpc "common/rpc"
 	"context"
 	"fmt"
 	"log"
 	"log-service/data"
 	"net/http"
+	"net/rpc"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -49,6 +51,10 @@ func main() {
 	app := Config{
 		Models: data.New(client),
 	}
+
+	// Register the RPC Server
+	err = rpc.Register(new(commonrpc.RPCServer))
+	go commonrpc.RPCListen(rpcPort)
 
 	log.Println("Starting logger service on port:", webPort)
 	srv := &http.Server{

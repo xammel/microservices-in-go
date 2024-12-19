@@ -71,5 +71,6 @@ stop:
 	@-pkill -SIGTERM -f "./${FRONT_END_BINARY}"
 	@echo "Stopped front end!"
 
+compile: build_broker build_auth build_logger build_mailer build_listener build_front
 start_all: up_build start
 kill_all: down stop

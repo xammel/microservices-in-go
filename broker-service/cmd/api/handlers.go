@@ -8,12 +8,7 @@ import (
 	"net/http"
 	"common/rest"
 	"common/rabbitmq"
-)
-
-const (
-	mailServiceURL = "http://mail-service/send"
-	logServiceURL  = "http://logger-service/log"
-	authServiceURL = "http://authentication-service/authenticate"
+	"common/constants"
 )
 
 func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +49,7 @@ func (app *Config) authenticate(writer http.ResponseWriter, authPayload rest.Aut
 	jsonData, _ := json.MarshalIndent(authPayload, "", "\t")
 
 	// call the service
-	request, error := http.NewRequest("POST", authServiceURL, bytes.NewBuffer(jsonData))
+	request, error := http.NewRequest("POST", constants.AuthServiceURL, bytes.NewBuffer(jsonData))
 	if error != nil {
 		rest.ErrorJson(writer, error)
 		return
@@ -108,7 +103,7 @@ func (app *Config) logItem(writer http.ResponseWriter, logEntry rest.LogPayload)
 	jsonData, _ := json.MarshalIndent(logEntry, "", "\t")
 
 	// call the service
-	request, error := http.NewRequest("POST", logServiceURL, bytes.NewBuffer(jsonData))
+	request, error := http.NewRequest("POST", constants.LogServiceURL, bytes.NewBuffer(jsonData))
 	if error != nil {
 		rest.ErrorJson(writer, error)
 		return
@@ -142,7 +137,7 @@ func (app *Config) sendMail(writer http.ResponseWriter, message rest.MailPayload
 	jsonData, _ := json.MarshalIndent(message, "", "\t")
 
 	// call the mail service
-	request, err := http.NewRequest("POST", mailServiceURL, bytes.NewBuffer(jsonData))
+	request, err := http.NewRequest("POST", constants.MailServiceURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		rest.ErrorJson(writer, err)
 		return

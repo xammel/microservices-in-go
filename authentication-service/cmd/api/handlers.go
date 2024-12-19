@@ -2,15 +2,16 @@ package main
 
 import (
 	"bytes"
+	"common/rest"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"common/constants"
 	"net/http"
-	"common/rest"
 )
 
 func (app *Config) Authenticate(writer http.ResponseWriter, request *http.Request) {
-	
+
 	var requestPayload rest.AuthPayload
 
 	err := rest.ReadJson(writer, request, &requestPayload)
@@ -60,9 +61,8 @@ func (app *Config) logLogin(name, data string) error {
 	entry.Data = data
 
 	jsonData, _ := json.MarshalIndent(entry, "", "\t")
-	logServiceUrl := "http://logger-service/log"
 
-	request, err := http.NewRequest("POST", logServiceUrl, bytes.NewBuffer(jsonData))
+	request, err := http.NewRequest("POST", constants.LogServiceURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return err
 	}

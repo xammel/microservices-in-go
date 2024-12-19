@@ -2,17 +2,13 @@ package event
 
 import (
 	"bytes"
+	"common/rabbitmq"
+	"common/rest"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"common/rabbitmq"
 )
-
-type Payload struct {
-	Name string `json:"name"`
-	Data string `json:"data"`
-}
 
 func Listen(rabbitConn *rabbitmq.RabbitConnection, topics []string) error {
 	channel, err := rabbitConn.Connection.Channel()
@@ -48,7 +44,7 @@ func Listen(rabbitConn *rabbitmq.RabbitConnection, topics []string) error {
 	forever := make(chan bool)
 	go func() {
 		for d := range messages {
-			var payload Payload
+			var payload rest.LogPayload
 			_ = json.Unmarshal(d.Body, &payload)
 			go handlePayload(payload)
 		}
@@ -60,7 +56,7 @@ func Listen(rabbitConn *rabbitmq.RabbitConnection, topics []string) error {
 	return nil
 }
 
-func handlePayload(payload Payload) {
+func handlePayload(payload rest.LogPayload) {
 	log.Printf("Received payload: %+v \n", payload)
 	switch payload.Name {
 	case "log", "event":
@@ -81,7 +77,7 @@ func handlePayload(payload Payload) {
 	}
 }
 
-func logEvent(entry Payload) error {
+func logEvent(entry rest.LogPayload) error {
 	// create some json we'll sent to the auth microservice
 	jsonData, _ := json.MarshalIndent(entry, "", "\t")
 

@@ -10,10 +10,8 @@ import (
 )
 
 func (app *Config) Authenticate(writer http.ResponseWriter, request *http.Request) {
-	var requestPayload struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
+	
+	var requestPayload rest.AuthPayload
 
 	err := rest.ReadJson(writer, request, &requestPayload)
 

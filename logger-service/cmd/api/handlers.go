@@ -7,14 +7,9 @@ import (
 	"net/http"
 )
 
-type JsonPayload struct {
-	Name string `json:"name"`
-	Data string `json:"data"`
-}
-
 func (app *Config) WriteLog(writer http.ResponseWriter, request *http.Request) {
 	// read json into var
-	var requestPayload JsonPayload
+	var requestPayload rest.LogPayload
 
 	_ = rest.ReadJson(writer, request, &requestPayload)
 

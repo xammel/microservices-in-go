@@ -7,14 +7,8 @@ import (
 )
 
 func (app *Config) SendMail(writer http.ResponseWriter, request *http.Request) {
-	type mailMessage struct {
-		From string `json:"from"`
-		To string `json:"to"`
-		Subject string `json:"subject"`
-		Message string `json:"message"`
-	}
 
-	var requestPayload mailMessage
+	var requestPayload rest.MailPayload
 
 	err := rest.ReadJson(writer, request, &requestPayload)
 	if err != nil {

@@ -44,12 +44,12 @@ build_logger:
 	@echo "Done!"
 
 build_mailer:
-	@echo "Building logger binary..."
+	@echo "Building mailer binary..."
 	cd ../mail-service && env GOOS=linux CGO_ENABLED=0 go build -o ${MAILER_BINARY} ./cmd/api
 	@echo "Done!"
 
 build_listener:
-	@echo "Building logger binary..."
+	@echo "Building listener binary..."
 	cd ../listener-service && env GOOS=linux CGO_ENABLED=0 go build -o ${LISTENER_BINARY} .
 	@echo "Done!"
 

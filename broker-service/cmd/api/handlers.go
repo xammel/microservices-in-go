@@ -16,30 +16,6 @@ const (
 	authServiceURL = "http://authentication-service/authenticate"
 )
 
-type RequestPayload struct {
-	Action string      `json:"action"`
-	Auth   AuthPayload `json:"auth,omitempty"`
-	Log    LogPayload  `json:"log,omitempty"`
-	Mail   MailPayload `json:"mail,omitempty"`
-}
-
-type AuthPayload struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-type LogPayload struct {
-	Name string `json:"name"`
-	Data string `json:"data"`
-}
-
-type MailPayload struct {
-	From    string `json:"from"`
-	To      string `json:"to"`
-	Subject string `json:"subject"`
-	Message string `json:"message"`
-}
-
 func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
 
 	payload := rest.JsonResponse {
@@ -51,7 +27,7 @@ func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Config) HandleSubmission(writer http.ResponseWriter, request *http.Request) {
-	var requestPayload RequestPayload
+	var requestPayload rest.RequestPayload
 
 	error := rest.ReadJson(writer, request, &requestPayload)
 	if error != nil {
@@ -73,7 +49,7 @@ func (app *Config) HandleSubmission(writer http.ResponseWriter, request *http.Re
 	}
 }
 
-func (app *Config) authenticate(writer http.ResponseWriter, authPayload AuthPayload) {
+func (app *Config) authenticate(writer http.ResponseWriter, authPayload rest.AuthPayload) {
 	// create some json we'll sent to the auth microservice
 	jsonData, _ := json.MarshalIndent(authPayload, "", "\t")
 
@@ -127,7 +103,7 @@ func (app *Config) authenticate(writer http.ResponseWriter, authPayload AuthPayl
 /**
 *** Legacy ***
 **/
-func (app *Config) logItem(writer http.ResponseWriter, logEntry LogPayload) {
+func (app *Config) logItem(writer http.ResponseWriter, logEntry rest.LogPayload) {
 	// create some json we'll sent to the auth microservice
 	jsonData, _ := json.MarshalIndent(logEntry, "", "\t")
 
@@ -162,7 +138,7 @@ func (app *Config) logItem(writer http.ResponseWriter, logEntry LogPayload) {
 	rest.WriteJson(writer, http.StatusAccepted, payload)
 }
 
-func (app *Config) sendMail(writer http.ResponseWriter, message MailPayload) {
+func (app *Config) sendMail(writer http.ResponseWriter, message rest.MailPayload) {
 	jsonData, _ := json.MarshalIndent(message, "", "\t")
 
 	// call the mail service
@@ -197,7 +173,7 @@ func (app *Config) sendMail(writer http.ResponseWriter, message MailPayload) {
 	rest.WriteJson(writer, http.StatusAccepted, payload)
 }
 
-func (app *Config) logEventViaRabbitMQ(writer http.ResponseWriter, logPayload LogPayload) {
+func (app *Config) logEventViaRabbitMQ(writer http.ResponseWriter, logPayload rest.LogPayload) {
 	
 	// Push event to RabbitMQ
 	err := app.pushToQueue(logPayload)
@@ -214,7 +190,7 @@ func (app *Config) logEventViaRabbitMQ(writer http.ResponseWriter, logPayload Lo
 	rest.WriteJson(writer, http.StatusAccepted, payload)
 }
 
-func (app *Config) pushToQueue(payload LogPayload) error {
+func (app *Config) pushToQueue(payload rest.LogPayload) error {
 	rabbitConn, err := rabbitmq.NewConnection(app.RabbitMQ)
 	if err != nil {
 		return err

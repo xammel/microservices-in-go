@@ -3,12 +3,14 @@ package main
 import (
 	"broker/event"
 	"bytes"
+	"common/constants"
+	"common/rabbitmq"
+	"common/rest"
 	"encoding/json"
 	"errors"
 	"net/http"
-	"common/rest"
-	"common/rabbitmq"
-	"common/constants"
+	"net/rpc"
+	commonrpc "common/rpc"
 )
 
 func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
@@ -35,8 +37,10 @@ func (app *Config) HandleSubmission(writer http.ResponseWriter, request *http.Re
 		app.authenticate(writer, requestPayload.Auth)
 	case "log":
 		// Legacy
-		//app.logItem(writer, requestPayload.Log)
-		app.logEventViaRabbitMQ(writer, requestPayload.Log)
+		// app.logItem(writer, requestPayload.Log)
+		// Legacy 2
+		// app.logEventViaRabbitMQ(writer, requestPayload.Log)
+		app.logItemViaRPC(writer, requestPayload.Log)
 	case "mail":
 		app.sendMail(writer, requestPayload.Mail)
 	default:
@@ -199,4 +203,31 @@ func (app *Config) pushToQueue(payload rest.LogPayload) error {
 	}
 
 	return nil
+}
+
+func (app *Config) logItemViaRPC(writer http.ResponseWriter, logPayload rest.LogPayload) {
+	client, err := rpc.Dial("tcp", "logger-service:5001") // move to common?
+	if err != nil {
+		rest.ErrorJson(writer, err)
+		return
+	}
+
+	rpcPayload := commonrpc.RPCPayload {
+		Name: logPayload.Name,
+		Data: logPayload.Data,
+	}
+
+	var result string
+	// If this doesn't work it's because our LogInfo isn't on an RPCServer receiver
+	err = client.Call("RPCServer.LogInfo", rpcPayload, &result)
+	if err != nil {
+		rest.ErrorJson(writer, err)
+	}
+
+	payload := rest.JsonResponse {
+		Error: false,
+		Message: result,
+	}
+
+	rest.WriteJson(writer, http.StatusAccepted, payload)
 }

@@ -10,6 +10,7 @@ import (
 )
 
 func LogInfo(payload rpc.RPCPayload, response *string) error {
+	log.Println("Within LogInfo RPC receiver")
 	collection := client.Database(constants.MongoDBName).Collection(constants.MongoDBCollectionName)
 	_, err := collection.InsertOne(context.TODO(), data.LogEntry{
 		Name:      payload.Name,

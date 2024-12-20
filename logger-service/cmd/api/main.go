@@ -1,6 +1,7 @@
 package main
 
 import (
+	"common/constants"
 	commonrpc "common/rpc"
 	"context"
 	"fmt"
@@ -18,7 +19,6 @@ const (
 	webPort  = "80"
 	rpcPort  = "5001"
 	mongoUrl = "mongodb://mongo:27017"
-	gRpcPort = "50001"
 )
 
 var client *mongo.Client
@@ -52,9 +52,12 @@ func main() {
 		Models: data.New(client),
 	}
 
-	// Register the RPC Server
+	log.Println("Starting RPC service on port:", rpcPort)
 	err = rpc.Register(new(LoggerRPCServer))
 	go commonrpc.RPCListen(rpcPort)
+
+	log.Println("Starting gRPC service on port:", constants.GrpcPort)
+	go app.gRPCListen()
 
 	log.Println("Starting logger service on port:", webPort)
 	srv := &http.Server{

@@ -2,6 +2,7 @@ package main
 
 import (
 	"broker/event"
+	"broker/logs"
 	"bytes"
 	"common/constants"
 	"common/rabbitmq"
@@ -9,9 +10,15 @@ import (
 	commonrpc "common/rpc"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"net/rpc"
+	"time"
+
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
@@ -234,5 +241,43 @@ func (app *Config) logItemViaRPC(writer http.ResponseWriter, logPayload rest.Log
 		Message: result,
 	}
 
+	rest.WriteJson(writer, http.StatusAccepted, payload)
+}
+
+func (app *Config) LogViaGRPC(writer http.ResponseWriter, req *http.Request) {
+	var requestPayload rest.RequestPayload
+	err := rest.ReadJson(writer, req, &requestPayload)
+	if err != nil {
+		rest.ErrorJson(writer, err)
+		return
+	}
+
+	loggerUrl := fmt.Sprintf("logger-service:%s", constants.GrpcPort)
+	conn, err := grpc.Dial(loggerUrl, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+	if err != nil {
+		rest.ErrorJson(writer, err)
+		return
+	}
+	defer conn.Close()
+
+	c := logs.NewLogServiceClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	log := logs.Log{
+		Name: requestPayload.Log.Name,
+		Data: requestPayload.Log.Data,
+	}
+	logsRequest := logs.LogRequest{ LogEntry: &log }
+
+	_, err = c.WriteLog(ctx, &logsRequest)
+	if err != nil {
+		rest.ErrorJson(writer, err)
+		return
+	}
+
+	var payload rest.JsonResponse
+	payload.Error = false
+	payload.Message = "logged via gRPC"
 	rest.WriteJson(writer, http.StatusAccepted, payload)
 }

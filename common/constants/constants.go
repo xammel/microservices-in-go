@@ -6,4 +6,5 @@ const (
 	AuthServiceURL        = "http://authentication-service/authenticate"
 	MongoDBName           = "logs"
 	MongoDBCollectionName = "logs"
+	GrpcPort              = "50001"
 )

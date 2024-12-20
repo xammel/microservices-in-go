@@ -53,7 +53,7 @@ func main() {
 	}
 
 	// Register the RPC Server
-	err = rpc.Register(new(commonrpc.RPCServer))
+	err = rpc.Register(new(LoggerRPCServer))
 	go commonrpc.RPCListen(rpcPort)
 
 	log.Println("Starting logger service on port:", webPort)

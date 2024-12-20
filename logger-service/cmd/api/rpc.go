@@ -9,7 +9,9 @@ import (
 	"time"
 )
 
-func LogInfo(payload rpc.RPCPayload, response *string) error {
+type LoggerRPCServer struct{}
+
+func (server *LoggerRPCServer) LogInfo(payload rpc.RPCPayload, response *string) error {
 	log.Println("Within LogInfo RPC receiver")
 	collection := client.Database(constants.MongoDBName).Collection(constants.MongoDBCollectionName)
 	_, err := collection.InsertOne(context.TODO(), data.LogEntry{

@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 )
 
 func ReadJson(writer http.ResponseWriter, request *http.Request, data any) error {
 	maxBytes := 1048576 // 1 MB
 	request.Body = http.MaxBytesReader(writer, request.Body, int64(maxBytes))
-	
+
 	decoder := json.NewDecoder(request.Body)
 	err := decoder.Decode(data)
 	if err != nil {
@@ -23,9 +24,12 @@ func ReadJson(writer http.ResponseWriter, request *http.Request, data any) error
 	}
 
 	return nil
- }
+}
 
- func WriteJson(writer http.ResponseWriter, status int, data any, headers ...http.Header) error {
+func WriteJson(writer http.ResponseWriter, status int, data any, headers ...http.Header) error {
+
+	log.Printf("Writing Json: %+v", data)
+
 	output, err := json.Marshal(data)
 	if err != nil {
 		return err
@@ -35,21 +39,22 @@ func ReadJson(writer http.ResponseWriter, request *http.Request, data any) error
 		for key, value := range headers[0] {
 			writer.Header()[key] = value
 		}
-	
+
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(status)
+
 	_, err = writer.Write(output)
 	if err != nil {
 		return err
 	}
 
 	return nil
- }
+}
 
- func ErrorJson(writer http.ResponseWriter, err error, status ...int) error {
-	
+func ErrorJson(writer http.ResponseWriter, err error, status ...int) error {
+
 	statusCode := http.StatusBadRequest
 
 	if len(status) > 0 {
@@ -61,4 +66,4 @@ func ReadJson(writer http.ResponseWriter, request *http.Request, data any) error
 	payload.Message = err.Error()
 
 	return WriteJson(writer, statusCode, payload)
- }
+}

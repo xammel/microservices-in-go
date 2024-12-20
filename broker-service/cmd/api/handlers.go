@@ -6,11 +6,12 @@ import (
 	"common/constants"
 	"common/rabbitmq"
 	"common/rest"
+	commonrpc "common/rpc"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"net/rpc"
-	commonrpc "common/rpc"
 )
 
 func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
@@ -217,12 +218,16 @@ func (app *Config) logItemViaRPC(writer http.ResponseWriter, logPayload rest.Log
 		Data: logPayload.Data,
 	}
 
+	log.Println("about to call")
+
 	var result string
-	// If this doesn't work it's because our LogInfo isn't on an RPCServer receiver
-	err = client.Call("RPCServer.LogInfo", rpcPayload, &result)
+	err = client.Call("LoggerRPCServer.LogInfo", rpcPayload, &result)
 	if err != nil {
 		rest.ErrorJson(writer, err)
+		return
 	}
+
+	log.Println("after the call, result: ", result)
 
 	payload := rest.JsonResponse {
 		Error: false,

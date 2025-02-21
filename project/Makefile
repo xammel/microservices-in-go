@@ -24,18 +24,22 @@ stop_swarm:
 	docker stack rm myapp
 	@echo "Stopped swarm!"
 
-start_swarm: compile stop_swarm
+build_swarm_images: 
 	@echo "Building swarm docker images..."
 	cd ../broker-service && docker build -f broker-service.dockerfile -t maxmel/broker-service:1.0.0 .
 	cd ../authentication-service && docker build -f authentication-service.dockerfile -t maxmel/authentication-service:1.0.0 . 
 	cd ../logger-service && docker build -f logger-service.dockerfile -t maxmel/logger-service:1.0.0 . 
 	cd ../mail-service && docker build -f mail-service.dockerfile -t maxmel/mail-service:1.0.0 . 
 	cd ../listener-service && docker build -f listener-service.dockerfile -t maxmel/listener-service:1.0.0 . 
+	cd ../front-end && docker build -f front-end.dockerfile -t maxmel/front-end:1.0.0 .
+	cd ../project
+
+start_swarm: 
 	@echo "Starting swarm..."
-	cd ../project && docker stack deploy -c swarm.yml myapp
+	docker stack deploy -c swarm.yml myapp
 	@echo "Started swarm!"
 
-
+build_and_start_swarm: stop_swarm compile build_swarm_images start_swarm
 
 ## down: stop docker compose
 down:

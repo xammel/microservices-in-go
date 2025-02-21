@@ -24,8 +24,7 @@ stop_swarm:
 	docker stack rm myapp
 	@echo "Stopped swarm!"
 
-start_swarm: compile
-	stop_swarm
+start_swarm: compile stop_swarm
 	@echo "Building swarm docker images..."
 	cd ../broker-service && docker build -f broker-service.dockerfile -t maxmel/broker-service:1.0.0 .
 	cd ../authentication-service && docker build -f authentication-service.dockerfile -t maxmel/authentication-service:1.0.0 . 

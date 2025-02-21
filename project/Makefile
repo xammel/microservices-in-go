@@ -12,12 +12,31 @@ up:
 	@echo "Docker images started!"
 
 ## up_build: stops docker-compose (if running), builds all projects and starts docker compose
-up_build: build_broker build_auth build_logger build_mailer build_listener
+up_build: compile
 	@echo "Stopping docker images (if running...)"
 	docker-compose down
 	@echo "Building (when required) and starting docker images..."
 	docker-compose up --build -d
 	@echo "Docker images built and started!"
+
+stop_swarm: 
+	@echo "Stopping swarm"
+	docker stack rm myapp
+	@echo "Stopped swarm!"
+
+start_swarm: compile
+	stop_swarm
+	@echo "Building swarm docker images..."
+	cd ../broker-service && docker build -f broker-service.dockerfile -t maxmel/broker-service:1.0.0 .
+	cd ../authentication-service && docker build -f authentication-service.dockerfile -t maxmel/authentication-service:1.0.0 . 
+	cd ../logger-service && docker build -f logger-service.dockerfile -t maxmel/logger-service:1.0.0 . 
+	cd ../mail-service && docker build -f mail-service.dockerfile -t maxmel/mail-service:1.0.0 . 
+	cd ../listener-service && docker build -f listener-service.dockerfile -t maxmel/listener-service:1.0.0 . 
+	@echo "Starting swarm..."
+	cd ../project && docker stack deploy -c swarm.yml myapp
+	@echo "Started swarm!"
+
+
 
 ## down: stop docker compose
 down:

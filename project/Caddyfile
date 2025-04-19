@@ -1,5 +1,6 @@
 {
-    email   you@gmail.com
+	# debug
+	email   you@gmail.com
 }
 
 (static) {
@@ -25,9 +26,9 @@ localhost:80 {
 	encode zstd gzip
 	import static
 
-	reverse_proxy  http://front-end:8081
+	reverse_proxy  http://front-end:80
 }
 
-backend:80 {
+http://localhost:81 {
 	reverse_proxy http://broker-service:8080
 }

@@ -12,7 +12,7 @@ up:
 	@echo "Docker images started!"
 
 ## up_build: stops docker-compose (if running), builds all projects and starts docker compose
-up_build: compile
+build_and_docker_compose: compile
 	@echo "Stopping docker images (if running...)"
 	docker-compose down
 	@echo "Building (when required) and starting docker images..."
@@ -32,7 +32,7 @@ build_swarm_images:
 	cd ../mail-service && docker build -f mail-service.dockerfile -t maxmel/mail-service:1.0.0 . 
 	cd ../listener-service && docker build -f listener-service.dockerfile -t maxmel/listener-service:1.0.0 . 
 	cd ../front-end && docker build -f front-end.dockerfile -t maxmel/front-end:1.0.0 .
-	cd ../project
+	cd ../project && docker build -f caddy.dockerfile -t maxmel/micro-caddy:1.0.0 .
 
 start_swarm: 
 	@echo "Starting swarm..."
@@ -78,7 +78,7 @@ build_listener:
 ## build_front: builds the frone end binary
 build_front:
 	@echo "Building front end binary..."
-	cd ../front-end && env CGO_ENABLED=0 go build -o ${FRONT_END_BINARY} ./cmd/web
+	cd ../front-end && env GOOS=linux CGO_ENABLED=0 go build -o ${FRONT_END_BINARY} ./cmd/web
 	@echo "Done!"
 
 ## start: starts the front end

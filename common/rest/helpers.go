@@ -39,7 +39,6 @@ func WriteJson(writer http.ResponseWriter, status int, data any, headers ...http
 		for key, value := range headers[0] {
 			writer.Header()[key] = value
 		}
-
 	}
 
 	writer.Header().Set("Content-Type", "application/json")

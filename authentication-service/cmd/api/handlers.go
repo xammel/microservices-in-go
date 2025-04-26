@@ -22,13 +22,13 @@ func (app *Config) Authenticate(writer http.ResponseWriter, request *http.Reques
 	}
 
 	// validate the user against the DB
-	user, err := app.Models.User.GetByEmail(requestPayload.Email)
+	user, err := app.Repo.GetByEmail(requestPayload.Email)
 	if err != nil {
 		rest.ErrorJson(writer, errors.New(err.Error()), http.StatusBadRequest)
 		return
 	}
 
-	valid, err := user.PasswordMatches(requestPayload.Password)
+	valid, err := app.Repo.PasswordMatches(requestPayload.Password, *user)
 	if err != nil || !valid {
 		rest.ErrorJson(writer, errors.New("invalid password"), http.StatusUnauthorized)
 		return
@@ -67,8 +67,7 @@ func (app *Config) logLogin(name, data string) error {
 		return err
 	}
 
-	client := &http.Client{}
-	_, err = client.Do(request)
+	_, err = app.Client.Do(request)
 
 	if err != nil {
 		return err

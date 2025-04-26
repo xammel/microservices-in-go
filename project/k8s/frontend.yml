@@ -17,9 +17,9 @@ spec:
         image: maxmel/front-end:1.0.0
         env:
         - name: BROKER_URL
-          value: "http://localhost/backend"
+          value: "http://localhost:30080/backend"
         ports:
-        - containerPort: 8080 # front-end default port for messaging
+        - containerPort: 80 # front-end port on which the web page is served
         resources:
           requests:
             memory: "64Mi"
@@ -40,5 +40,5 @@ spec:
   ports:
   - protocol: TCP
     port: 8080
-    targetPort: 8080
+    targetPort: 80
   type: ClusterIP

@@ -5,3 +5,6 @@
 **/rabbitMQApp
 **/mailerApp
 **/listenerApp
+**/.DS_Store
+**/api
+!**/api/

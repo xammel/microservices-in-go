@@ -36,6 +36,8 @@ func main() {
 		Client: &http.Client{},
 	}
 
+	app.setupRepo(conn)
+
 	serve := &http.Server{
 		Addr: fmt.Sprintf(":%s", webPort),
 		Handler: app.routes(),

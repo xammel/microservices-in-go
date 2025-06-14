@@ -81,11 +81,16 @@ build_front:
 	cd ../front-end && env GOOS=linux CGO_ENABLED=0 go build -o ${FRONT_END_BINARY} ./cmd/web
 	@echo "Done!"
 
+## build_front_local: builds the front end library for mac silicon
+build_front_local:
+	@echo "Building front end binary..."
+	cd ../front-end && env GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -o ${FRONT_END_BINARY} ./cmd/web
+	@echo "Done!"
+
 ## start: starts the front end
-start: build_front
+start: build_front_local
 	@echo "Starting front end"
-	cd ../front-end && ./${FRONT_END_BINARY} &
-	sleep 1 && open "http://localhost:80"
+	cd ../front-end && export BROKER_URL="http://localhost:8080" && ./${FRONT_END_BINARY}
 
 ## stop: stop the front end
 stop:

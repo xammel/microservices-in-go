@@ -1,3 +1,5 @@
+[![Version](https://img.shields.io/badge/goversion-1.24.x-blue.svg)](https://golang.org)
+
 # Microservices in Go
 
 This project

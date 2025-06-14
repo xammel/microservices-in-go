@@ -1,14 +1,19 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
 	"math"
 	"net/http"
-	"time"
 	"os"
+	"os/signal"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 const webPort = "8080"
@@ -27,16 +32,33 @@ func main() {
 	}
 	defer rabbitConnection.Close()
 
+	// Handle SIGINT (CTRL+C) gracefully.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	// Set up OpenTelemetry.
+	otelShutdown, err := setupOTelSDK(ctx)
+	if err != nil {
+		return
+	}
+	// Handle shutdown properly so nothing leaks.
+	defer func() {
+		err = errors.Join(err, otelShutdown(context.Background()))
+	}()
+
 	app := Config{
 		RabbitMQ: rabbitConnection,
 	}
 
 	log.Printf("Starting broker service on port %s \n", webPort)
 
+	var handler http.Handler = app.routes()
+	handler = otelhttp.NewHandler(handler, "/")
+
 	// Define http server
 	serve := &http.Server{
 		Addr:    fmt.Sprintf(":%s", webPort),
-		Handler: app.routes(),
+		Handler: handler,
 	}
 
 	// Start the server

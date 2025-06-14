@@ -53,7 +53,9 @@ services:
     deploy: 
       mode: replicated
       replicas: 1
-  
+    environment:
+      OTEL_RESOURCE_ATTRIBUTES: "service.name=broker"
+ 
   authentication-service:
     build:
       context: ./../authentication-service
